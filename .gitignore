@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data
+instance/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Test and coverage output
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Build output
+build/
+dist/
+*.egg-info/
+
+# IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated reports and screenshots
+screenshots/*.png
+screenshots/*.jpg
+screenshots/*.pdf
+demo/*.mp4
+demo/*.pptx
+!screenshots/.gitkeep
+!demo/.gitkeep
