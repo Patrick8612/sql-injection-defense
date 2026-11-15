@@ -113,6 +113,41 @@
     </div>
 </section>
 
+<section id="articles" class="section">
+    <div class="section-heading">
+        <span class="section-index">02 / 演示数据</span>
+        <h2>数据库中的安全知识文章</h2>
+        <p>
+            当前内容来自 SQLite 数据库，全部为课程演示使用的虚构数据。
+        </p>
+    </div>
+
+    <div class="article-grid">
+        {% for article in articles %}
+        <article class="article-card">
+            <div class="article-topline">
+                <span class="article-tag">{{ article.category }}</span>
+                <span class="article-id">A-{{ article.id }}</span>
+            </div>
+
+            <h3>{{ article.title }}</h3>
+            <p>{{ article.content }}</p>
+
+            <div class="article-meta">
+                <span>作者 · {{ article.author }}</span>
+                <time datetime="{{ article.created_at }}">
+                    {{ article.created_at[:10] }}
+                </time>
+            </div>
+        </article>
+        {% else %}
+        <div class="empty-state">
+            暂无演示文章，请检查数据库初始化结果。
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
 <section id="safety" class="safety-panel">
     <div>
         <span class="eyebrow">SAFETY BOUNDARY</span>

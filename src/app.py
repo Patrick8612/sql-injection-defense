@@ -31,6 +31,7 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         init_db()
         click.echo("Database initialized successfully.")
 
+
     @app.get("/")
     def index():
         db = get_db()
@@ -47,10 +48,26 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         mode = mode_row["value"] if mode_row else "safe"
         mode_label = "安全模式" if mode == "safe" else "漏洞演示模式"
 
+        articles = db.execute(
+            """
+            SELECT
+                articles.id,
+                articles.title,
+                articles.content,
+                articles.category,
+                articles.created_at,
+                users.display_name AS author
+            FROM articles
+            JOIN users ON users.id = articles.author_id
+            ORDER BY articles.id
+            """
+        ).fetchall()
+
         return render_template(
             "index.html",
             article_count=article_count,
             mode_label=mode_label,
+            articles=articles,
         )
 
     @app.get("/health")
