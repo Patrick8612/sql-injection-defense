@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 
 import click
-from flask import Flask, jsonify
+from flask import Flask, jsonify,render_template
 
 from .config import Config
 from .database import get_db, init_app as init_database, init_db
@@ -39,14 +39,18 @@ def create_app(config_object: type[Config] = Config) -> Flask:
             "SELECT COUNT(*) AS count FROM articles"
         ).fetchone()["count"]
 
-        return jsonify(
-            {
-                "name": "SQL Injection Detection and Defense Demo",
-                "status": "initialized",
-                "stage": 2,
-                "database": "ready",
-                "article_count": article_count,
-            }
+        mode_row = db.execute(
+            "SELECT value FROM settings WHERE key = ?",
+            ("security_mode",),
+        ).fetchone()
+
+        mode = mode_row["value"] if mode_row else "safe"
+        mode_label = "安全模式" if mode == "safe" else "漏洞演示模式"
+
+        return render_template(
+            "index.html",
+            article_count=article_count,
+            mode_label=mode_label,
         )
 
     @app.get("/health")

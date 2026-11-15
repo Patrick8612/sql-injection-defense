@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}系统概览 · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-copy">
+        <span class="eyebrow">SYSTEM FOUNDATION · STAGE 02</span>
+        <h1>让 SQL 注入风险<br>变得可见、可解释、可验证</h1>
+        <p>
+            系统通过漏洞模式与安全模式的对照，演示查询结构变化、
+            风险检测、日志告警和参数化查询防护。
+        </p>
+
+        <div class="hero-actions">
+            <a class="button button-primary" href="#modules">
+                查看阶段规划
+            </a>
+            <a class="button button-secondary" href="{{ url_for('health') }}">
+                检查服务状态
+            </a>
+        </div>
+    </div>
+
+    <aside class="hero-panel">
+        <div class="panel-header">
+            <span>实验环境状态</span>
+            <span class="live-badge">LOCAL</span>
+        </div>
+
+        <dl class="status-list">
+            <div>
+                <dt>当前安全模式</dt>
+                <dd class="text-safe">{{ mode_label }}</dd>
+            </div>
+            <div>
+                <dt>数据库连接</dt>
+                <dd class="text-safe">已连接</dd>
+            </div>
+            <div>
+                <dt>演示文章</dt>
+                <dd>{{ article_count }} 篇</dd>
+            </div>
+            <div>
+                <dt>系统阶段</dt>
+                <dd>基础框架搭建</dd>
+            </div>
+        </dl>
+
+        <div class="panel-note">
+            默认启用安全模式。后续漏洞模式只会开放给本机虚构数据。
+        </div>
+    </aside>
+</section>
+
+<section class="metric-grid" aria-label="系统指标">
+    <article class="metric-card">
+        <span class="metric-code">MODE</span>
+        <strong>{{ mode_label }}</strong>
+        <p>系统默认运行策略</p>
+    </article>
+
+    <article class="metric-card">
+        <span class="metric-code">DATA</span>
+        <strong>{{ article_count }}</strong>
+        <p>数据库中的演示文章</p>
+    </article>
+
+    <article class="metric-card">
+        <span class="metric-code">DB</span>
+        <strong>READY</strong>
+        <p>SQLite 数据库连接正常</p>
+    </article>
+
+    <article class="metric-card">
+        <span class="metric-code">HOST</span>
+        <strong>127.0.0.1</strong>
+        <p>仅允许本机访问</p>
+    </article>
+</section>
+
+<section id="modules" class="section">
+    <div class="section-heading">
+        <span class="section-index">01 / 模块规划</span>
+        <h2>系统将分为四层能力</h2>
+        <p>先完成基础业务和页面，再加入受控漏洞演示与检测闭环。</p>
+    </div>
+
+    <div class="feature-grid">
+        <article class="feature-card">
+            <span class="feature-number">01</span>
+            <h3>基础业务</h3>
+            <p>登录、退出、用户角色、文章查询和演示环境重置。</p>
+        </article>
+
+        <article class="feature-card">
+            <span class="feature-number">02</span>
+            <h3>受控漏洞演示</h3>
+            <p>在本地虚构数据上观察错误型、联合查询和布尔盲注。</p>
+        </article>
+
+        <article class="feature-card">
+            <span class="feature-number">03</span>
+            <h3>规则检测</h3>
+            <p>根据参数形态、SQL 片段、异常编码和请求频率计算风险。</p>
+        </article>
+
+        <article class="feature-card">
+            <span class="feature-number">04</span>
+            <h3>安全防护与报告</h3>
+            <p>参数化查询、统一异常、日志告警和修复前后对照报告。</p>
+        </article>
+    </div>
+</section>
+
+<section id="safety" class="safety-panel">
+    <div>
+        <span class="eyebrow">SAFETY BOUNDARY</span>
+        <h2>本项目只用于本地安全教学</h2>
+        <p>
+            所有账号、文章和攻击载荷均为虚构内容。
+            漏洞演示路径不会连接外部站点或真实业务数据库。
+        </p>
+    </div>
+    <span class="safety-seal">LOCAL ONLY</span>
+</section>
+{% endblock %}

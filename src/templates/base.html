@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SQL 注入漏洞检测与防御演示系统">
+    <title>{% block title %}SQL 注入防御演示系统{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+
+<body>
+    <div class="ambient-grid" aria-hidden="true"></div>
+
+    <header class="site-header">
+        <a class="brand" href="{{ url_for('index') }}">
+            <span class="brand-mark">SQL</span>
+            <span>
+                <strong>注入检测与防御</strong>
+                <small>本地安全教学平台</small>
+            </span>
+        </a>
+
+        <nav class="main-nav" aria-label="主导航">
+            <a href="{{ url_for('index') }}">系统概览</a>
+            <a href="#modules">功能规划</a>
+            <a href="#safety">安全边界</a>
+            <a href="{{ url_for('health') }}">服务状态</a>
+        </nav>
+
+        <span class="environment-badge">
+            <span class="status-dot"></span>
+            本地实验环境
+        </span>
+    </header>
+
+    <main class="page-shell">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <span>SQL 注入漏洞检测与防御演示系统</span>
+        <span>课程设计 · 本地虚构数据</span>
+    </footer>
+</body>
+
+</html>
