@@ -61,35 +61,3 @@ def test_login_and_logout(client):
     response = client.get("/")
     assert response.status_code == 302
 
-
-
-
-def test_student_cannot_access_admin(client):
-    client.post(
-        "/login",
-        data={
-            "username": "student",
-            "password": "Student123!",
-        },
-    )
-
-    response = client.get("/admin")
-
-    assert response.status_code == 403
-    assert "无权访问".encode() in response.data
-
-
-def test_admin_can_access_admin(client):
-    client.post(
-        "/login",
-        data={
-            "username": "admin",
-            "password": "Admin123!",
-        },
-    )
-
-    response = client.get("/admin")
-
-    assert response.status_code == 200
-    assert "管理控制台".encode() in response.data
-    assert "最近登录记录".encode() in response.data

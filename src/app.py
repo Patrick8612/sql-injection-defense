@@ -5,31 +5,15 @@ from __future__ import annotations
 import sqlite3
 
 import click
-from flask import (
-    Flask,
-    flash,
-    g,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from flask import Flask, flash, g, jsonify, redirect, render_template, request, session, url_for
 
 from .config import Config
 from .database import get_db, init_app as init_database, init_db
-from .security.auth import (
-    admin_required,
-    authenticate_user,
-    init_app as init_auth,
-    login_required,
-)
+from .security.auth import admin_required, authenticate_user, init_app as init_auth, login_required
+from .services.articles import list_categories, search_articles
 
 
 def create_app(config_object: type[Config] = Config) -> Flask:
-    """Create and configure the Flask application."""
-
     app = Flask(__name__)
     app.config.from_object(config_object)
 
@@ -41,8 +25,6 @@ def create_app(config_object: type[Config] = Config) -> Flask:
 
     @app.cli.command("init-db")
     def init_db_command() -> None:
-        """Initialize or repair the demonstration database."""
-
         init_db()
         click.echo("Database initialized successfully.")
 
@@ -57,19 +39,13 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         if request.method == "POST":
             username = request.form.get("username", "").strip()[:80]
             password = request.form.get("password", "")
-
             user = authenticate_user(username, password)
             db = get_db()
 
             with db:
                 db.execute(
                     """
-                    INSERT INTO login_logs (
-                        user_id,
-                        username_attempt,
-                        source_ip,
-                        success
-                    )
+                    INSERT INTO login_logs (user_id, username_attempt, source_ip, success)
                     VALUES (?, ?, ?, ?)
                     """,
                     (
@@ -88,11 +64,7 @@ def create_app(config_object: type[Config] = Config) -> Flask:
                 flash(f"欢迎，{user['display_name']}。", "success")
                 return redirect(url_for("index"))
 
-        return render_template(
-            "login.html",
-            error=error,
-            username=username,
-        ), 401 if error else 200
+        return render_template("login.html", error=error, username=username), 401 if error else 200
 
     @app.post("/logout")
     @login_required
@@ -106,37 +78,23 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     @admin_required
     def admin_dashboard():
         db = get_db()
-
-        user_count = db.execute(
-            "SELECT COUNT(*) AS count FROM users"
-        ).fetchone()["count"]
-        article_count = db.execute(
-            "SELECT COUNT(*) AS count FROM articles"
-        ).fetchone()["count"]
-
+        user_count = db.execute("SELECT COUNT(*) AS count FROM users").fetchone()["count"]
+        article_count = db.execute("SELECT COUNT(*) AS count FROM articles").fetchone()["count"]
         mode_row = db.execute(
-            "SELECT value FROM settings WHERE key = ?",
-            ("security_mode",),
+            "SELECT value FROM settings WHERE key = ?", ("security_mode",)
         ).fetchone()
         mode = mode_row["value"] if mode_row else "safe"
         mode_label = "安全模式" if mode == "safe" else "漏洞演示模式"
-
         recent_logs = db.execute(
             """
-            SELECT
-                login_logs.id,
-                login_logs.username_attempt,
-                login_logs.source_ip,
-                login_logs.success,
-                login_logs.created_at,
-                users.display_name
+            SELECT login_logs.id, login_logs.username_attempt, login_logs.source_ip,
+                   login_logs.success, login_logs.created_at, users.display_name
             FROM login_logs
             LEFT JOIN users ON users.id = login_logs.user_id
             ORDER BY login_logs.id DESC
             LIMIT 10
             """
         ).fetchall()
-
         return render_template(
             "admin.html",
             user_count=user_count,
@@ -149,38 +107,40 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     def forbidden(error):
         return render_template("403.html"), 403
 
+    @app.get("/articles")
+    @login_required
+    def article_search():
+        keyword = request.args.get("q", "").strip()[:80]
+        category = request.args.get("category", "").strip()[:40]
+        articles = search_articles(keyword=keyword, category=category)
+        categories = list_categories()
+        return render_template(
+            "articles.html",
+            articles=articles,
+            categories=categories,
+            keyword=keyword,
+            selected_category=category,
+        )
+
     @app.get("/")
     @login_required
     def index():
         db = get_db()
-
-        article_count = db.execute(
-            "SELECT COUNT(*) AS count FROM articles"
-        ).fetchone()["count"]
-
+        article_count = db.execute("SELECT COUNT(*) AS count FROM articles").fetchone()["count"]
         mode_row = db.execute(
-            "SELECT value FROM settings WHERE key = ?",
-            ("security_mode",),
+            "SELECT value FROM settings WHERE key = ?", ("security_mode",)
         ).fetchone()
-
         mode = mode_row["value"] if mode_row else "safe"
         mode_label = "安全模式" if mode == "safe" else "漏洞演示模式"
-
         articles = db.execute(
             """
-            SELECT
-                articles.id,
-                articles.title,
-                articles.content,
-                articles.category,
-                articles.created_at,
-                users.display_name AS author
+            SELECT articles.id, articles.title, articles.content, articles.category,
+                   articles.created_at, users.display_name AS author
             FROM articles
             JOIN users ON users.id = articles.author_id
             ORDER BY articles.id
             """
         ).fetchall()
-
         return render_template(
             "index.html",
             article_count=article_count,
@@ -195,7 +155,6 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         except sqlite3.Error:
             app.logger.exception("Database health check failed")
             return jsonify({"status": "error"}), 503
-
         return jsonify({"status": "ok"})
 
     return app
@@ -203,10 +162,5 @@ def create_app(config_object: type[Config] = Config) -> Flask:
 
 app = create_app()
 
-
 if __name__ == "__main__":
-    app.run(
-        host=app.config["HOST"],
-        port=app.config["PORT"],
-        debug=app.config["DEBUG"],
-    )
+    app.run(host=app.config["HOST"], port=app.config["PORT"], debug=app.config["DEBUG"])

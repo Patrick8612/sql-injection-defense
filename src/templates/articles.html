@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}文章查询 · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<header class="search-header">
+    <span class="eyebrow">ARTICLE SEARCH · STAGE 03</span>
+    <h1>安全文章查询</h1>
+    <p>
+        按标题、正文关键词或分类筛选演示文章。
+        查询条件通过数据库参数绑定，不直接参与 SQL 结构拼接。
+    </p>
+</header>
+
+<form class="search-form" method="get" action="{{ url_for('article_search') }}">
+    <div class="search-field">
+        <label for="article-keyword">标题或正文关键词</label>
+        <input id="article-keyword" name="q" type="search" value="{{ keyword }}" maxlength="80"
+            placeholder="例如：参数化、盲注、安全">
+    </div>
+    <div class="search-field">
+        <label for="article-category">文章分类</label>
+        <select id="article-category" name="category">
+            <option value="">全部分类</option>
+            {% for category in categories %}
+            <option value="{{ category }}" {% if category==selected_category %}selected{% endif %}>{{ category }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="search-actions">
+        <button class="button button-primary" type="submit">查询</button>
+        <a class="button button-secondary" href="{{ url_for('article_search') }}">重置</a>
+    </div>
+</form>
+
+<div class="search-summary">
+    <span><strong>{{ articles|length }}</strong> 篇匹配文章</span>
+    <span class="query-safety-note">参数化查询已启用</span>
+</div>
+
+<div class="article-grid">
+    {% for article in articles %}
+    <article class="article-card">
+        <div class="article-topline">
+            <span class="article-tag">{{ article["category"] }}</span>
+            <span class="article-id">A-{{ article["id"] }}</span>
+        </div>
+        <h3>{{ article["title"] }}</h3>
+        <p>{{ article["content"] }}</p>
+        <div class="article-meta">
+            <span>作者 · {{ article["author"] }}</span>
+            <time datetime="{{ article['created_at'] }}">{{ article["created_at"][:10] }}</time>
+        </div>
+    </article>
+    {% else %}
+    <div class="empty-state">没有找到匹配文章，请修改关键词或分类后重试。</div>
+    {% endfor %}
+</div>
+{% endblock %}

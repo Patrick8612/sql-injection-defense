@@ -23,6 +23,7 @@
 
         <nav class="main-nav" aria-label="主导航">
             <a href="{{ url_for('index') }}">系统概览</a>
+            <a href="{{ url_for('article_search') }}">文章查询</a>
             {% if g.user and g.user["role"] == "admin" %}
             <a href="{{ url_for('admin_dashboard') }}">管理面板</a>
             {% endif %}
