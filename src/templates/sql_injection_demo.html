@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}受控 SQL 注入演示 · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<header class="demo-header">
+    <div>
+        <span class="eyebrow">CONTROLLED SQL LAB · STAGE 3E</span>
+        <h1>受控 SQL 注入演示</h1>
+        <p>
+            在隔离的只读演示库中观察查询结构变化。
+            实验不连接应用用户表、登录日志或外部系统。
+        </p>
+    </div>
+    <span class="demo-safety-seal">LOCAL · READ ONLY</span>
+</header>
+
+{% if security_mode != "vulnerable" %}
+<section class="demo-guard">
+    <span class="demo-guard-code">SAFE MODE</span>
+    <h2>当前为安全模式，演示查询未执行</h2>
+    <p>
+        漏洞演示模式只能由管理员在管理面板中启用。安全模式始终保持参数化查询。
+    </p>
+    {% if g.user["role"] == "admin" %}
+    <a class="button button-primary" href="{{ url_for('admin_dashboard') }}">前往管理面板</a>
+    {% else %}
+    <span class="query-safety-note">请联系管理员启用漏洞演示模式</span>
+    {% endif %}
+</section>
+{% else %}
+<section class="demo-banner">
+    <strong>漏洞演示模式已启用</strong>
+    <span>仅限 127.0.0.1、虚构文章和只读查询。测试完成后请切回安全模式。</span>
+</section>
+
+<form class="search-form demo-form" method="get" action="{{ url_for('sql_injection_demo') }}">
+    <div class="search-field">
+        <label for="demo-scenario">演示场景</label>
+        <select id="demo-scenario" name="scenario">
+            {% for value, label in scenario_labels.items() %}
+            <option value="{{ value }}" {% if value == scenario %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="search-field">
+        <label for="demo-parameter">
+            {{ "布尔条件" if scenario == "boolean" else "演示参数" }}
+        </label>
+        <input id="demo-parameter" name="q" type="text" value="{{ parameter }}"
+            maxlength="{{ max_input_length }}" autocomplete="off"
+            placeholder="{{ '例如：1 = 1' if scenario == 'boolean' else '输入普通关键词或演示参数' }}">
+    </div>
+    <div class="search-actions">
+        <button class="button button-danger" type="submit">运行受控查询</button>
+        <a class="button button-secondary" href="{{ url_for('sql_injection_demo') }}">重置</a>
+    </div>
+</form>
+
+<div class="demo-scenario-note">
+    <strong>{{ scenario_labels[scenario] }}</strong>
+    <span>{{ scenario_summary }}</span>
+</div>
+
+{% if result %}
+<section class="demo-query-panel">
+    <div class="demo-query-meta">
+        <div>
+            <span>请求参数</span>
+            <code>{{ result.parameter or "(空)" }}</code>
+        </div>
+        <div>
+            <span>场景</span>
+            <strong>{{ scenario_labels[result.scenario] }}</strong>
+        </div>
+        <div>
+            <span>受控查询摘要</span>
+            <strong>{{ result.query_summary }}</strong>
+        </div>
+        <div>
+            <span>{{ "匹配数量" if result.scenario == "boolean" else "返回条数" }}</span>
+            <strong>{{ result.match_count }}</strong>
+        </div>
+    </div>
+
+    {% if result.error %}
+    <div class="demo-query-error" role="alert">
+        <strong>查询已终止</strong>
+        <span>{{ result.error }}</span>
+    </div>
+    {% elif result.scenario == "boolean" %}
+    <div class="demo-boolean-result">
+        <span>布尔盲注观察值</span>
+        <strong>{{ result.match_count }}</strong>
+        <p>页面只返回匹配数量，用于观察条件真伪造成的响应差异。</p>
+    </div>
+    {% elif result.rows %}
+    {% if result.truncated %}
+    <p class="demo-truncated-note">
+        结果超过 {{ max_results }} 条，页面只展示前 {{ max_results }} 条。
+    </p>
+    {% endif %}
+    <div class="demo-table-wrap">
+        <table class="demo-result-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>标题</th>
+                    <th>分类</th>
+                    <th>摘要</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in result.rows %}
+                <tr>
+                    <td>{{ row["id"] }}</td>
+                    <td>{{ row["title"] }}</td>
+                    <td>{{ row["category"] }}</td>
+                    <td>{{ row["summary"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">演示查询没有返回结果。</div>
+    {% endif %}
+</section>
+{% endif %}
+{% endif %}
+
+<section class="demo-boundaries">
+    <h2>实验边界</h2>
+    <ul>
+        <li>独立数据库只包含 8 篇虚构演示文章。</li>
+        <li>数据库以只读 URI 打开，并限制表和 SQLite 操作权限。</li>
+        <li>单次最多展示 {{ max_results }} 条结果，输入最长 {{ max_input_length }} 个字符。</li>
+        <li>查询具有执行步数和时间上限，异常只显示统一提示。</li>
+        <li>禁止写入、堆叠语句、系统 schema、文件操作和系统命令。</li>
+    </ul>
+</section>
+{% endblock %}

@@ -12,6 +12,7 @@ services:
       PORT: "5000"
       FLASK_DEBUG: "0"
       DATABASE_PATH: "/app/instance/demo.db"
+      DEMO_DATABASE_PATH: "/app/instance/sql_injection_demo.db"
       SESSION_COOKIE_SECURE: "0"
       SECRET_KEY: "${SECRET_KEY:-local-docker-demo-secret}"
 

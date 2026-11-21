@@ -11,6 +11,7 @@ def app(tmp_path):
         SECRET_KEY = "test-secret-key"
 
     TestConfig.DATABASE_PATH = tmp_path / "test.db"
+    TestConfig.DEMO_DATABASE_PATH = tmp_path / "sql-injection-demo.db"
     return create_app(TestConfig)
 
 

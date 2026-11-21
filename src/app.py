@@ -32,6 +32,14 @@ from .services.settings import (
     security_mode_label,
     set_security_mode,
 )
+from .services.sql_injection_demo import (
+    MAX_DEMO_INPUT_LENGTH,
+    MAX_DEMO_RESULTS,
+    SCENARIO_LABELS,
+    SCENARIO_SUMMARIES,
+    init_demo_database,
+    run_demo_query,
+)
 
 
 def create_app(config_object: type[Config] = Config) -> Flask:
@@ -43,6 +51,7 @@ def create_app(config_object: type[Config] = Config) -> Flask:
 
     with app.app_context():
         init_db()
+        init_demo_database()
 
     @app.cli.command("init-db")
     def init_db_command() -> None:
@@ -157,6 +166,31 @@ def create_app(config_object: type[Config] = Config) -> Flask:
             categories=categories,
             keyword=keyword,
             selected_category=category,
+        )
+
+    @app.get("/demo/sql-injection")
+    @login_required
+    def sql_injection_demo():
+        scenario = request.args.get("scenario", "normal").strip()
+        if scenario not in SCENARIO_LABELS:
+            scenario = "normal"
+
+        parameter = request.args.get("q", "").strip()
+        submitted = bool(request.args)
+        result = None
+        if get_security_mode() == "vulnerable" and submitted:
+            result = run_demo_query(scenario, parameter)
+
+        return render_template(
+            "sql_injection_demo.html",
+            scenario=scenario,
+            scenario_labels=SCENARIO_LABELS,
+            scenario_summary=SCENARIO_SUMMARIES[scenario],
+            parameter=parameter,
+            result=result,
+            submitted=submitted,
+            max_input_length=MAX_DEMO_INPUT_LENGTH,
+            max_results=MAX_DEMO_RESULTS,
         )
 
     @app.get("/")

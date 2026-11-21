@@ -31,6 +31,12 @@ class Config:
     DATABASE_PATH = Path(
         os.getenv("DATABASE_PATH", str(PROJECT_ROOT / "instance" / "demo.db"))
     )
+    DEMO_DATABASE_PATH = Path(
+        os.getenv(
+            "DEMO_DATABASE_PATH",
+            str(PROJECT_ROOT / "instance" / "sql_injection_demo.db"),
+        )
+    )
     MAX_CONTENT_LENGTH = 1 * 1024 * 1024
 
     SESSION_COOKIE_HTTPONLY = True

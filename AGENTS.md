@@ -17,8 +17,12 @@
 - 3B：user/admin 角色、`admin_required`、`/admin` 和 403 控制已完成。
 - 3C：`/articles` 参数化查询及关键词/分类筛选已完成。
 - 3D：模式管理已完成。默认 `safe`，数据库限制只允许 `safe`/`vulnerable`，仅管理员可通过 `POST /admin/security-mode` 切换，所有页面显示当前模式，切换会更新 `settings.updated_at`。
+- 3E：`/demo/sql-injection` 已完成。使用独立的 `instance/sql_injection_demo.db`，通过只读 URI、SQLite authorizer、单表读取、白名单函数、输入长度、返回行数、VM 步数、执行时间和 SQL 长度限制控制实验范围；支持正常特殊字符、错误型、联合查询和布尔盲注场景。
+- 3F：阶段三本地收尾已完成。完整回归测试为 `24 passed`，本地 `/health` 返回 `200 {"status":"ok"}`，文档已同步并完成本地提交。GitHub 推送仍待网络恢复后重试。
 
-当前完整测试结果为 `14 passed`。不要重写上述已完成功能。
+当前完整测试结果为 `24 passed`。不要重写上述已完成功能。
+
+Docker 配置已包含独立演示数据库路径。当前执行环境没有可用 Docker CLI，因此需要在安装 Docker 的环境中重新执行 `docker compose config`、构建、健康检查和页面验收。
 
 运行测试：
 
@@ -40,12 +44,13 @@ pytest 配置已将临时目录固定为项目内的 `.pytest-basetemp/`。
 - `src/security/auth.py`：session 与权限装饰器。
 - `src/services/articles.py`：参数化文章查询。
 - `src/services/settings.py`：安全模式读取、校验和持久化。
+- `src/services/sql_injection_demo.py`：隔离的只读注入场景。
 - `src/templates/`：Jinja2 页面模板。
 - `src/static/css/app.css`：统一样式。
 - `tests/`：pytest 自动化测试。
 
 ## 下一次工作
 
-下一步是 3E：受控 SQL 注入演示。只可使用本地 SQLite 虚构文章数据，只允许只读 SELECT，限制返回行数和查询复杂度，禁止写操作、堆叠危险语句、延时、文件读取和系统命令，异常信息不得泄露数据库版本、表结构或堆栈细节。
+先通过 `git push origin main` 完成阶段三远端同步。之后进入阶段四：独立规则引擎、参数长度与组合特征检查、风险评分、载荷脱敏、`detection_logs` 写入，以及管理面板风险分布和最近告警。
 
-3E 之后进入 3F：完整测试、更新文档、Git 提交和推送。检测规则与 `detection_logs` 属于阶段四，不属于 3E。
+阶段四仍只处理本地虚构数据和受控请求。检测规则不能替代参数化查询，漏洞演示模式默认应保持关闭。
