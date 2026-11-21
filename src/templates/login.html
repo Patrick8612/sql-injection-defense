@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}登录 · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<section class="login-layout">
+    <div class="login-copy">
+        <span class="eyebrow">AUTHENTICATION · STAGE 03</span>
+        <h1>进入本地安全实验环境</h1>
+        <p>
+            登录后才能查看演示文章。所有账号和数据均为课程演示使用的虚构内容。
+        </p>
+
+        <div class="demo-account-list">
+            <div>
+                <span>普通用户</span>
+                <code>student / Student123!</code>
+            </div>
+            <div>
+                <span>管理员</span>
+                <code>admin / Admin123!</code>
+            </div>
+        </div>
+    </div>
+
+    <article class="login-card">
+        <div class="panel-header">
+            <span>账号登录</span>
+            <span class="live-badge">LOCAL</span>
+        </div>
+
+        {% if error %}
+        <div class="form-alert" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('login') }}">
+            <label for="username">用户名</label>
+            <input id="username" name="username" type="text" value="{{ username }}" maxlength="80"
+                autocomplete="username" required autofocus>
+
+            <label for="password">密码</label>
+            <input id="password" name="password" type="password" maxlength="200" autocomplete="current-password"
+                required>
+
+            <button class="button button-primary login-submit" type="submit">
+                登录系统
+            </button>
+        </form>
+
+        <p class="login-note">
+            密码不会写入日志，登录记录只保存用户名、来源地址和登录结果。
+        </p>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,1 @@
+"""Security helpers for authentication and future request detection."""

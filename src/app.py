@@ -5,10 +5,25 @@ from __future__ import annotations
 import sqlite3
 
 import click
-from flask import Flask, jsonify,render_template
+from flask import (
+    Flask,
+    flash,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from .config import Config
 from .database import get_db, init_app as init_database, init_db
+from .security.auth import (
+    authenticate_user,
+    init_app as init_auth,
+    login_required,
+)
 
 
 def create_app(config_object: type[Config] = Config) -> Flask:
@@ -17,10 +32,9 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_object)
 
-    # 注册数据库关闭钩子。
     init_database(app)
+    init_auth(app)
 
-    # 创建应用上下文，完成建表和首次种子数据写入。
     with app.app_context():
         init_db()
 
@@ -31,8 +45,63 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         init_db()
         click.echo("Database initialized successfully.")
 
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        if g.user is not None:
+            return redirect(url_for("index"))
+
+        error = None
+        username = ""
+
+        if request.method == "POST":
+            username = request.form.get("username", "").strip()[:80]
+            password = request.form.get("password", "")
+
+            user = authenticate_user(username, password)
+            db = get_db()
+
+            with db:
+                db.execute(
+                    """
+                    INSERT INTO login_logs (
+                        user_id,
+                        username_attempt,
+                        source_ip,
+                        success
+                    )
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        user["id"] if user else None,
+                        username or "(empty)",
+                        request.remote_addr or "unknown",
+                        1 if user else 0,
+                    ),
+                )
+
+            if user is None:
+                error = "用户名或密码错误。"
+            else:
+                session.clear()
+                session["user_id"] = user["id"]
+                flash(f"欢迎，{user['display_name']}。", "success")
+                return redirect(url_for("index"))
+
+        return render_template(
+            "login.html",
+            error=error,
+            username=username,
+        ), 401 if error else 200
+
+    @app.post("/logout")
+    @login_required
+    def logout():
+        session.clear()
+        flash("已安全退出登录。", "success")
+        return redirect(url_for("login"))
 
     @app.get("/")
+    @login_required
     def index():
         db = get_db()
 
