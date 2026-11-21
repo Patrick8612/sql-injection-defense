@@ -20,6 +20,7 @@ from flask import (
 from .config import Config
 from .database import get_db, init_app as init_database, init_db
 from .security.auth import (
+    admin_required,
     authenticate_user,
     init_app as init_auth,
     login_required,
@@ -99,6 +100,54 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         session.clear()
         flash("已安全退出登录。", "success")
         return redirect(url_for("login"))
+
+    @app.get("/admin")
+    @login_required
+    @admin_required
+    def admin_dashboard():
+        db = get_db()
+
+        user_count = db.execute(
+            "SELECT COUNT(*) AS count FROM users"
+        ).fetchone()["count"]
+        article_count = db.execute(
+            "SELECT COUNT(*) AS count FROM articles"
+        ).fetchone()["count"]
+
+        mode_row = db.execute(
+            "SELECT value FROM settings WHERE key = ?",
+            ("security_mode",),
+        ).fetchone()
+        mode = mode_row["value"] if mode_row else "safe"
+        mode_label = "安全模式" if mode == "safe" else "漏洞演示模式"
+
+        recent_logs = db.execute(
+            """
+            SELECT
+                login_logs.id,
+                login_logs.username_attempt,
+                login_logs.source_ip,
+                login_logs.success,
+                login_logs.created_at,
+                users.display_name
+            FROM login_logs
+            LEFT JOIN users ON users.id = login_logs.user_id
+            ORDER BY login_logs.id DESC
+            LIMIT 10
+            """
+        ).fetchall()
+
+        return render_template(
+            "admin.html",
+            user_count=user_count,
+            article_count=article_count,
+            mode_label=mode_label,
+            recent_logs=recent_logs,
+        )
+
+    @app.errorhandler(403)
+    def forbidden(error):
+        return render_template("403.html"), 403
 
     @app.get("/")
     @login_required

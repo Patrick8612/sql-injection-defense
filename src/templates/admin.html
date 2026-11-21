@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}管理控制台 · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<header class="admin-header">
+    <div>
+        <span class="eyebrow">ADMIN CONSOLE · STAGE 03</span>
+        <h1>管理控制台</h1>
+        <p>查看系统状态和最近登录记录。漏洞模式控制将在后续小阶段加入。</p>
+    </div>
+    <span class="environment-badge">
+        <span class="status-dot"></span>
+        管理员权限已启用
+    </span>
+</header>
+
+<section class="admin-metrics" aria-label="系统统计">
+    <article class="admin-metric">
+        <span>当前运行模式</span>
+        <strong>{{ mode_label }}</strong>
+    </article>
+    <article class="admin-metric">
+        <span>系统用户数量</span>
+        <strong>{{ user_count }}</strong>
+    </article>
+    <article class="admin-metric">
+        <span>演示文章数量</span>
+        <strong>{{ article_count }}</strong>
+    </article>
+</section>
+
+<section class="admin-section">
+    <h2>最近登录记录</h2>
+
+    <div class="log-table-wrap">
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th>用户名</th>
+                    <th>身份</th>
+                    <th>来源地址</th>
+                    <th>结果</th>
+                    <th>登录时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in recent_logs %}
+                <tr>
+                    <td>{{ item["username_attempt"] }}</td>
+                    <td>{{ item["display_name"] or "未识别" }}</td>
+                    <td>{{ item["source_ip"] }}</td>
+                    <td class="{{ 'log-success' if item['success'] else 'log-failure' }}">
+                        {{ "成功" if item["success"] else "失败" }}
+                    </td>
+                    <td>{{ item["created_at"] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">暂无登录记录。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

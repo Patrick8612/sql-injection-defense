@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import Flask, g, redirect, session, url_for
+from flask import Flask, abort, g, redirect, session, url_for
 from werkzeug.security import check_password_hash
 
 from ..database import get_db
@@ -36,6 +36,20 @@ def login_required(view):
     def wrapped_view(**kwargs):
         if g.user is None:
             return redirect(url_for("login"))
+        return view(**kwargs)
+
+    return wrapped_view
+
+
+def admin_required(view):
+    """Allow only users with the administrator role."""
+
+    @wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for("login"))
+        if g.user["role"] != "admin":
+            abort(403)
         return view(**kwargs)
 
     return wrapped_view

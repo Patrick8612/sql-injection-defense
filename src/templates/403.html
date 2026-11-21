@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}403 无权访问{% endblock %}
+
+{% block content %}
+<section class="forbidden-panel">
+    <div class="forbidden-code">403</div>
+    <h1>无权访问</h1>
+    <p>
+        当前账号没有进入该页面的权限。
+        管理功能仅对管理员角色开放。
+    </p>
+    <a class="button button-primary" href="{{ url_for('index') }}">
+        返回系统首页
+    </a>
+</section>
+{% endblock %}

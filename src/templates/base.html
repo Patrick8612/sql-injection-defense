@@ -23,6 +23,9 @@
 
         <nav class="main-nav" aria-label="主导航">
             <a href="{{ url_for('index') }}">系统概览</a>
+            {% if g.user and g.user["role"] == "admin" %}
+            <a href="{{ url_for('admin_dashboard') }}">管理面板</a>
+            {% endif %}
             <a href="#modules">功能规划</a>
             <a href="#safety">安全边界</a>
             <a href="{{ url_for('health') }}">服务状态</a>
@@ -45,13 +48,13 @@
 
     <main class="page-shell">
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-            <div class="flash-stack">
-                {% for category, message in messages %}
-                <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
+        {% if messages %}
+        <div class="flash-stack">
+            {% for category, message in messages %}
+            <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
