@@ -138,6 +138,39 @@ a {
     white-space: nowrap;
 }
 
+.security-mode-badge {
+    display: inline-flex;
+    min-height: 34px;
+    padding: 0 12px;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.security-mode-badge.safe {
+    border-color: var(--border-strong);
+    color: var(--accent);
+    background: rgba(67, 223, 178, 0.07);
+}
+
+.security-mode-badge.vulnerable {
+    border-color: rgba(255, 138, 122, 0.45);
+    color: var(--danger);
+    background: rgba(255, 138, 122, 0.08);
+}
+
+.mode-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 13%, transparent);
+}
+
 .status-dot {
     width: 7px;
     height: 7px;
@@ -275,6 +308,21 @@ a {
 
 .text-safe {
     color: var(--accent);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.button-danger {
+    color: #2b0d09;
+    background: var(--danger);
+}
+
+.button:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .panel-note {
@@ -830,6 +878,40 @@ a {
     font-size: 20px;
 }
 
+.mode-control-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+.mode-control-panel h2 {
+    margin: 8px 0;
+}
+
+.mode-control-panel p {
+    max-width: 650px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.mode-control-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.mode-control-actions .button {
+    min-width: 156px;
+    cursor: pointer;
+}
+
+.mode-control-actions button:disabled {
+    cursor: not-allowed;
+}
+
 .log-table-wrap {
     overflow-x: auto;
 }
@@ -896,6 +978,16 @@ a {
 
     .admin-metrics {
         grid-template-columns: 1fr;
+    }
+
+    .mode-control-panel {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .mode-control-actions form,
+    .mode-control-actions .button {
+        width: 100%;
     }
 }
 

@@ -21,6 +21,11 @@
             </span>
         </a>
 
+        <span class="security-mode-badge {{ security_mode }}" aria-label="当前运行模式">
+            <span class="mode-indicator" aria-hidden="true"></span>
+            当前：{{ security_mode_label }}
+        </span>
+
         <nav class="main-nav" aria-label="主导航">
             <a href="{{ url_for('index') }}">系统概览</a>
             <a href="{{ url_for('article_search') }}">文章查询</a>

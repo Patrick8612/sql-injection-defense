@@ -5,12 +5,33 @@ from __future__ import annotations
 import sqlite3
 
 import click
-from flask import Flask, flash, g, jsonify, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    flash,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from .config import Config
 from .database import get_db, init_app as init_database, init_db
-from .security.auth import admin_required, authenticate_user, init_app as init_auth, login_required
+from .security.auth import (
+    admin_required,
+    authenticate_user,
+    init_app as init_auth,
+    login_required,
+)
 from .services.articles import list_categories, search_articles
+from .services.settings import (
+    SECURITY_MODES,
+    get_security_mode,
+    security_mode_label,
+    set_security_mode,
+)
 
 
 def create_app(config_object: type[Config] = Config) -> Flask:
@@ -27,6 +48,14 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     def init_db_command() -> None:
         init_db()
         click.echo("Database initialized successfully.")
+
+    @app.context_processor
+    def inject_security_mode():
+        mode = get_security_mode()
+        return {
+            "security_mode": mode,
+            "security_mode_label": security_mode_label(mode),
+        }
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -80,11 +109,6 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         db = get_db()
         user_count = db.execute("SELECT COUNT(*) AS count FROM users").fetchone()["count"]
         article_count = db.execute("SELECT COUNT(*) AS count FROM articles").fetchone()["count"]
-        mode_row = db.execute(
-            "SELECT value FROM settings WHERE key = ?", ("security_mode",)
-        ).fetchone()
-        mode = mode_row["value"] if mode_row else "safe"
-        mode_label = "安全模式" if mode == "safe" else "漏洞演示模式"
         recent_logs = db.execute(
             """
             SELECT login_logs.id, login_logs.username_attempt, login_logs.source_ip,
@@ -99,9 +123,22 @@ def create_app(config_object: type[Config] = Config) -> Flask:
             "admin.html",
             user_count=user_count,
             article_count=article_count,
-            mode_label=mode_label,
             recent_logs=recent_logs,
         )
+
+    @app.post("/admin/security-mode")
+    @login_required
+    @admin_required
+    def switch_security_mode():
+        mode = request.form.get("mode", "").strip()
+
+        if mode not in SECURITY_MODES:
+            flash("运行模式无效，未做任何修改。", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        set_security_mode(mode)
+        flash(f"已切换为{security_mode_label(mode)}。", "success")
+        return redirect(url_for("admin_dashboard"))
 
     @app.errorhandler(403)
     def forbidden(error):
@@ -127,11 +164,6 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     def index():
         db = get_db()
         article_count = db.execute("SELECT COUNT(*) AS count FROM articles").fetchone()["count"]
-        mode_row = db.execute(
-            "SELECT value FROM settings WHERE key = ?", ("security_mode",)
-        ).fetchone()
-        mode = mode_row["value"] if mode_row else "safe"
-        mode_label = "安全模式" if mode == "safe" else "漏洞演示模式"
         articles = db.execute(
             """
             SELECT articles.id, articles.title, articles.content, articles.category,
@@ -144,7 +176,6 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         return render_template(
             "index.html",
             article_count=article_count,
-            mode_label=mode_label,
             articles=articles,
         )
 

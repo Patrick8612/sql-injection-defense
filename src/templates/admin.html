@@ -7,7 +7,7 @@
     <div>
         <span class="eyebrow">ADMIN CONSOLE · STAGE 03</span>
         <h1>管理控制台</h1>
-        <p>查看系统状态和最近登录记录。漏洞模式控制将在后续小阶段加入。</p>
+        <p>查看系统状态、切换运行模式并审计最近登录记录。</p>
     </div>
     <span class="environment-badge">
         <span class="status-dot"></span>
@@ -18,7 +18,9 @@
 <section class="admin-metrics" aria-label="系统统计">
     <article class="admin-metric">
         <span>当前运行模式</span>
-        <strong>{{ mode_label }}</strong>
+        <strong class="{{ 'text-safe' if security_mode == 'safe' else 'text-danger' }}">
+            {{ security_mode_label }}
+        </strong>
     </article>
     <article class="admin-metric">
         <span>系统用户数量</span>
@@ -28,6 +30,31 @@
         <span>演示文章数量</span>
         <strong>{{ article_count }}</strong>
     </article>
+</section>
+
+<section class="admin-section mode-control-panel">
+    <div>
+        <span class="eyebrow">SECURITY MODE</span>
+        <h2>运行模式管理</h2>
+        <p>安全模式使用参数绑定；漏洞演示模式只用于后续本地虚构数据实验。</p>
+    </div>
+
+    <div class="mode-control-actions" aria-label="切换运行模式">
+        <form method="post" action="{{ url_for('switch_security_mode') }}">
+            <input type="hidden" name="mode" value="safe">
+            <button class="button button-primary" type="submit"
+                {% if security_mode == 'safe' %}disabled{% endif %}>
+                启用安全模式
+            </button>
+        </form>
+        <form method="post" action="{{ url_for('switch_security_mode') }}">
+            <input type="hidden" name="mode" value="vulnerable">
+            <button class="button button-danger" type="submit"
+                {% if security_mode == 'vulnerable' %}disabled{% endif %}>
+                启用漏洞演示模式
+            </button>
+        </form>
+    </div>
 </section>
 
 <section class="admin-section">

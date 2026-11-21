@@ -31,7 +31,9 @@
         <dl class="status-list">
             <div>
                 <dt>当前安全模式</dt>
-                <dd class="text-safe">{{ mode_label }}</dd>
+                <dd class="{{ 'text-safe' if security_mode == 'safe' else 'text-danger' }}">
+                    {{ security_mode_label }}
+                </dd>
             </div>
             <div>
                 <dt>数据库连接</dt>
@@ -56,7 +58,7 @@
 <section class="metric-grid" aria-label="系统指标">
     <article class="metric-card">
         <span class="metric-code">MODE</span>
-        <strong>{{ mode_label }}</strong>
+        <strong>{{ security_mode_label }}</strong>
         <p>系统默认运行策略</p>
     </article>
 

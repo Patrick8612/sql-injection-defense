@@ -23,6 +23,7 @@ instance/
 
 # Test and coverage output
 .pytest_cache/
+.pytest-basetemp/
 .coverage
 .coverage.*
 htmlcov/

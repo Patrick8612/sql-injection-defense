@@ -58,8 +58,25 @@ CREATE TABLE IF NOT EXISTS detection_logs (
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (key <> 'security_mode' OR value IN ('safe', 'vulnerable'))
 );
+
+CREATE TRIGGER IF NOT EXISTS validate_security_mode_on_insert
+BEFORE INSERT ON settings
+WHEN NEW.key = 'security_mode'
+    AND NEW.value NOT IN ('safe', 'vulnerable')
+BEGIN
+    SELECT RAISE(ABORT, 'security_mode must be safe or vulnerable');
+END;
+
+CREATE TRIGGER IF NOT EXISTS validate_security_mode_on_update
+BEFORE UPDATE OF key, value ON settings
+WHEN NEW.key = 'security_mode'
+    AND NEW.value NOT IN ('safe', 'vulnerable')
+BEGIN
+    SELECT RAISE(ABORT, 'security_mode must be safe or vulnerable');
+END;
 
 CREATE INDEX IF NOT EXISTS idx_articles_author
     ON articles(author_id);
@@ -156,6 +173,26 @@ def seed_db() -> None:
 
     db = get_db()
 
+    with db:
+        db.executemany(
+            """
+            INSERT OR IGNORE INTO settings (key, value)
+            VALUES (?, ?)
+            """,
+            [
+                ("security_mode", "safe"),
+                ("demo_environment", "local"),
+            ],
+        )
+        db.execute(
+            """
+            UPDATE settings
+            SET value = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE key = ? AND value NOT IN (?, ?)
+            """,
+            ("safe", "security_mode", "safe", "vulnerable"),
+        )
+
     existing_users = db.execute(
         "SELECT COUNT(*) AS count FROM users"
     ).fetchone()["count"]
@@ -202,18 +239,6 @@ def seed_db() -> None:
                 for title, content, category in DEMO_ARTICLES
             ],
         )
-
-        db.executemany(
-            """
-            INSERT OR IGNORE INTO settings (key, value)
-            VALUES (?, ?)
-            """,
-            [
-                ("security_mode", "safe"),
-                ("demo_environment", "local"),
-            ],
-        )
-
 
 def init_db() -> None:
     """Create all tables and insert the initial demonstration data."""
