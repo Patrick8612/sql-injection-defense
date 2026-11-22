@@ -8,6 +8,7 @@ from .frequency import (
     RequestFrequencyTracker,
     build_frequency_finding,
 )
+from .masking import MAX_MASKED_PAYLOAD_LENGTH, mask_parameters
 from .models import DetectionResult, RuleFinding
 from .policy import SecurityRequestDecision, decide_request_action
 from .rules import DEFAULT_RULES
@@ -28,6 +29,7 @@ __all__ = [
     "DetectionResult",
     "DispositionAction",
     "FrequencyDecision",
+    "MAX_MASKED_PAYLOAD_LENGTH",
     "RequestFrequencyTracker",
     "RiskAssessment",
     "RiskLevel",
@@ -39,4 +41,5 @@ __all__ = [
     "assess_detection",
     "build_frequency_finding",
     "decide_request_action",
+    "mask_parameters",
 ]

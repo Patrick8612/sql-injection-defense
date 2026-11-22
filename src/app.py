@@ -33,7 +33,9 @@ from .security.detection import (
     assess_detection,
     build_frequency_finding,
     decide_request_action,
+    mask_parameters,
 )
+from .services.detection_logs import record_detection
 from .services.articles import list_categories, search_articles
 from .services.settings import (
     SECURITY_MODES,
@@ -122,6 +124,17 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         g.security_detection = detection
         g.security_assessment = assessment
         g.security_decision = decision
+
+        if detection.matched:
+            try:
+                g.security_log_id = record_detection(
+                    assessment,
+                    endpoint=request.path,
+                    payload_masked=mask_parameters(parameters),
+                    action=decision.effective_action,
+                )
+            except sqlite3.Error:
+                app.logger.exception("Detection log write failed")
 
         if decision.effective_action is DispositionAction.BLOCK:
             return render_template("security_blocked.html"), 403

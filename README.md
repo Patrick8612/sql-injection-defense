@@ -25,6 +25,8 @@
 
 阶段四 4C 已完成：检测已接入文章查询和受控注入演示请求；增加 60 秒窗口内的可疑请求频率规则。正常业务路由的高风险输入会在查询前返回安全拦截页，中风险请求告警后继续执行；受控漏洞演示在漏洞模式下将高风险声明降级为教学告警并允许运行。4C 暂不持久化检测记录。
 
+阶段四 4D 已完成：命中检测规则的请求会写入 `detection_logs`，包括攻击类型、路由、脱敏载荷、风险等级、分值、实际执行动作和时间。即使请求被 403 拦截，也会在返回前完成日志写入。载荷日志只保存长度和字符类别统计，不保存原始输入。
+
 ## 目录结构
 
 ```text
@@ -149,13 +151,35 @@ python -m src.app
 - 漏洞模式下受控演示高风险：降级为教学告警后允许运行。
 - 安全模式下的演示请求本身不执行查询。
 
+## 4D 载荷脱敏与检测日志
+
+4D 使用 `src/security/detection/masking.py` 对请求参数生成不可还原的结构摘要，例如：
+
+```text
+q{len=12, alpha=11, digit=0, space=1, quote=0, symbol=0, control=0}
+```
+
+日志不会保存原始关键词、编码字符串或完整载荷。多个参数会分别记录名称、序号、长度和字符类别。
+
+`src/services/detection_logs.py` 将以下字段写入 `detection_logs`：
+
+- `attack_type`：SQL 注入、编码绕过、高频请求或异常输入分类。
+- `endpoint`：实际目标路由。
+- `payload_masked`：不可还原的参数结构摘要。
+- `risk_level`：`low`、`medium` 或 `high`。
+- `score`：4B 总风险分值。
+- `action`：实际执行的 `allow`、`alert` 或 `block`。
+- `created_at`：数据库生成的记录时间。
+
+只有命中规则的请求才写入检测日志，正常参数和空值不会生成记录。
+
 ## 测试
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-pytest 临时目录固定为项目内的 `.pytest-basetemp/`，避免 Windows 用户临时目录权限导致测试夹具创建失败。截至 2026-11-22，当前完整测试结果为 `64 passed`。
+pytest 临时目录固定为项目内的 `.pytest-basetemp/`，避免 Windows 用户临时目录权限导致测试夹具创建失败。截至 2026-11-22，当前完整测试结果为 `74 passed`。
 
 ## 安全边界
 
