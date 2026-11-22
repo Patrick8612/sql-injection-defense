@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}演示环境已恢复{% endblock %}
+
+{% block content %}
+<section class="reset-complete-panel">
+    <span class="eyebrow">RESET COMPLETE</span>
+    <h1>演示环境已恢复</h1>
+    <p>
+        已恢复 2 个虚构用户、8 篇应用文章、8 篇演示文章和安全模式。
+        日志、对照实验与报告已经清空，当前会话已退出。
+    </p>
+
+    <div class="reset-backup-list">
+        <strong>重置前数据库备份</strong>
+        {% for path in result.backup_paths %}
+        <code>{{ path }}</code>
+        {% else %}
+        <span>本次重置前没有可备份的数据库文件。</span>
+        {% endfor %}
+    </div>
+
+    <a class="button button-primary" href="{{ url_for('login') }}">重新登录</a>
+</section>
+{% endblock %}

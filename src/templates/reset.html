@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}恢复演示环境 · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<header class="admin-header">
+    <div>
+        <span class="eyebrow">ENVIRONMENT RESET · STAGE 5D</span>
+        <h1>恢复演示环境</h1>
+        <p>清除实验产生的数据，恢复两个账号、八篇文章和默认安全模式。</p>
+    </div>
+    <a class="button button-secondary" href="{{ url_for('admin_dashboard') }}">
+        返回管理面板
+    </a>
+</header>
+
+<section class="reset-warning">
+    <strong>危险操作</strong>
+    <span>
+        重置会清除登录日志、检测日志、对照实验和实验报告。
+        源码、配置、论文和截图不会被删除。
+    </span>
+</section>
+
+<section class="admin-section">
+    <h2>当前数据</h2>
+    <div class="reset-count-grid">
+        <article><span>系统用户</span><strong>{{ counts.users }}</strong></article>
+        <article><span>应用文章</span><strong>{{ counts.articles }}</strong></article>
+        <article><span>登录日志</span><strong>{{ counts.login_logs }}</strong></article>
+        <article><span>检测日志</span><strong>{{ counts.detection_logs }}</strong></article>
+        <article><span>对照实验</span><strong>{{ counts.comparison_runs }}</strong></article>
+        <article><span>实验报告</span><strong>{{ counts.reports }}</strong></article>
+        <article><span>演示文章库</span><strong>{{ counts.demo_articles }}</strong></article>
+    </div>
+</section>
+
+<section class="admin-section reset-confirm-panel">
+    <div>
+        <span class="eyebrow">CONFIRM RESET</span>
+        <h2>确认恢复</h2>
+        <p>
+            系统会先备份两个 SQLite 数据库，再恢复初始虚构数据。
+            完成后当前会话会退出，需要重新登录。
+        </p>
+    </div>
+
+    <form method="post" action="{{ url_for('reset_demo_environment') }}">
+        <label for="reset-confirmation">输入大写 RESET 确认操作</label>
+        <input id="reset-confirmation" name="confirmation" type="text"
+            autocomplete="off" spellcheck="false" placeholder="RESET" required>
+        <button class="button button-danger" type="submit">备份并恢复演示环境</button>
+    </form>
+</section>
+{% endblock %}

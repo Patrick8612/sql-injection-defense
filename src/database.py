@@ -286,6 +286,87 @@ def seed_db() -> None:
             ],
         )
 
+
+def reset_application_database() -> None:
+    """Reset all application runtime data in one transaction."""
+
+    db = get_db()
+    with db:
+        for table in (
+            "experiment_reports",
+            "comparison_results",
+            "comparison_runs",
+            "detection_logs",
+            "login_logs",
+            "articles",
+            "users",
+            "settings",
+        ):
+            db.execute(f"DELETE FROM {table}")
+
+        db.execute(
+            """
+            DELETE FROM sqlite_sequence
+            WHERE name IN (
+                'experiment_reports',
+                'comparison_results',
+                'comparison_runs',
+                'detection_logs',
+                'login_logs',
+                'articles',
+                'users'
+            )
+            """
+        )
+
+        user_rows = [
+            (
+                username,
+                generate_password_hash(password),
+                display_name,
+                role,
+            )
+            for username, password, display_name, role in DEMO_USERS
+        ]
+        db.executemany(
+            """
+            INSERT INTO users (username, password_hash, display_name, role)
+            VALUES (?, ?, ?, ?)
+            """,
+            user_rows,
+        )
+
+        student_id = db.execute(
+            "SELECT id FROM users WHERE username = ?",
+            ("student",),
+        ).fetchone()["id"]
+        db.executemany(
+            """
+            INSERT INTO articles (
+                title,
+                content,
+                category,
+                author_id
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            [
+                (title, content, category, student_id)
+                for title, content, category in DEMO_ARTICLES
+            ],
+        )
+        db.executemany(
+            """
+            INSERT INTO settings (key, value)
+            VALUES (?, ?)
+            """,
+            [
+                ("security_mode", "safe"),
+                ("demo_environment", "local"),
+            ],
+        )
+
+
 def init_db() -> None:
     """Create all tables and insert the initial demonstration data."""
 

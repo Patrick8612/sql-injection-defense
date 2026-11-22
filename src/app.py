@@ -72,6 +72,7 @@ from .services.reports import (
     get_experiment_report,
     list_experiment_reports,
 )
+from .services.reset import get_environment_counts, reset_environment
 from .services.sql_injection_demo import (
     MAX_DEMO_INPUT_LENGTH,
     MAX_DEMO_RESULTS,
@@ -377,6 +378,35 @@ def create_app(config_object: type[Config] = Config) -> Flask:
             f"-run-{report['comparison_run_id']}.md"
         )
         return response
+
+    @app.get("/admin/reset")
+    @login_required
+    @admin_required
+    def reset_dashboard():
+        return render_template(
+            "reset.html",
+            counts=get_environment_counts(),
+        )
+
+    @app.post("/admin/reset")
+    @login_required
+    @admin_required
+    def reset_demo_environment():
+        confirmation = request.form.get("confirmation", "").strip()
+        if confirmation != "RESET":
+            flash("确认文字不正确，演示环境未重置。", "error")
+            return redirect(url_for("reset_dashboard"))
+
+        try:
+            result = reset_environment()
+        except Exception:
+            app.logger.exception("Demonstration environment reset failed")
+            flash("环境恢复失败，系统已尝试回滚最近数据。", "error")
+            return redirect(url_for("reset_dashboard"))
+
+        session.clear()
+        g.user = None
+        return render_template("reset_complete.html", result=result)
 
     @app.post("/admin/security-mode")
     @login_required

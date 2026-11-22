@@ -118,6 +118,30 @@ def init_demo_database() -> None:
         )
 
 
+def reset_demo_database() -> None:
+    """Restore the isolated demonstration database to its seed state."""
+
+    database_path = Path(current_app.config["DEMO_DATABASE_PATH"])
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with sqlite3.connect(database_path) as db:
+        db.executescript(DEMO_SCHEMA_SQL)
+        db.execute("DELETE FROM demo_articles")
+        db.executemany(
+            """
+            INSERT INTO demo_articles (id, title, category, summary)
+            VALUES (?, ?, ?, ?)
+            """,
+            [
+                (index, title, category, content)
+                for index, (title, content, category) in enumerate(
+                    DEMO_ARTICLES,
+                    1,
+                )
+            ],
+        )
+
+
 def _open_read_only_database() -> sqlite3.Connection:
     """Open the isolated demonstration database with hard read-only guards."""
 
