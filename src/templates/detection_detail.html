@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}检测详情 D-{{ detection_log["id"] }} · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<header class="admin-header">
+    <div>
+        <span class="eyebrow">DETECTION DETAIL · D-{{ detection_log["id"] }}</span>
+        <h1>检测详情</h1>
+        <p>查看一条真实检测日志的脱敏记录和处置结果。</p>
+    </div>
+    <a class="button button-secondary" href="{{ url_for('admin_dashboard') }}">返回管理面板</a>
+</header>
+
+<section class="detection-detail-panel">
+    <div class="detection-detail-hero">
+        <div>
+            <span>攻击类型</span>
+            <strong>{{ detection_log["attack_type"] }}</strong>
+        </div>
+        <div>
+            <span>风险等级</span>
+            <span class="risk-badge {{ detection_log['risk_level'] }}">
+                {{ risk_level_labels[detection_log["risk_level"]] }}
+            </span>
+        </div>
+        <div>
+            <span>风险分值</span>
+            <strong>{{ detection_log["score"] }}</strong>
+        </div>
+        <div>
+            <span>实际动作</span>
+            <span class="action-badge {{ detection_log['action'] }}">
+                {{ action_labels[detection_log["action"]] }}
+            </span>
+        </div>
+    </div>
+
+    <dl class="detection-detail-list">
+        <div>
+            <dt>日志编号</dt>
+            <dd>D-{{ detection_log["id"] }}</dd>
+        </div>
+        <div>
+            <dt>目标路由</dt>
+            <dd><code>{{ detection_log["endpoint"] }}</code></dd>
+        </div>
+        <div>
+            <dt>记录时间</dt>
+            <dd>{{ detection_log["created_at"] }}</dd>
+        </div>
+        <div class="wide">
+            <dt>脱敏参数摘要</dt>
+            <dd><code>{{ detection_log["payload_masked"] }}</code></dd>
+        </div>
+    </dl>
+
+    <p class="detection-privacy-note">
+        原始请求参数没有写入数据库。此页面仅展示长度、字符类别和处置摘要。
+    </p>
+</section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}404 页面不存在{% endblock %}
+
+{% block content %}
+<section class="forbidden-panel">
+    <div class="forbidden-code">404</div>
+    <h1>页面不存在</h1>
+    <p>请求的页面或检测记录不存在。</p>
+    <a class="button button-primary" href="{{ url_for('index') }}">
+        返回系统首页
+    </a>
+</section>
+{% endblock %}

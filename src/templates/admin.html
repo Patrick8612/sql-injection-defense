@@ -5,9 +5,9 @@
 {% block content %}
 <header class="admin-header">
     <div>
-        <span class="eyebrow">ADMIN CONSOLE · STAGE 03</span>
+        <span class="eyebrow">ADMIN CONSOLE · STAGE 4E</span>
         <h1>管理控制台</h1>
-        <p>查看系统状态、切换运行模式并审计最近登录记录。</p>
+        <p>查看系统状态、运行模式、检测风险分布和最近安全告警。</p>
     </div>
     <span class="environment-badge">
         <span class="status-dot"></span>
@@ -32,6 +32,49 @@
     </article>
 </section>
 
+<section class="detection-overview" aria-label="检测风险统计">
+    <div class="detection-overview-heading">
+        <div>
+            <span class="eyebrow">DETECTION OVERVIEW</span>
+            <h2>检测概览</h2>
+        </div>
+        <span>
+            最近检测：
+            {{ detection_summary.last_detected_at or "暂无记录" }}
+        </span>
+    </div>
+
+    <div class="detection-metric-grid">
+        <article class="detection-metric total">
+            <span>检测总数</span>
+            <strong>{{ detection_summary.total }}</strong>
+            <small>
+                放行 {{ detection_summary.allow }} ·
+                告警 {{ detection_summary.alert }} ·
+                拦截 {{ detection_summary.block }}
+            </small>
+        </article>
+        <article class="detection-metric low">
+            <span>低风险</span>
+            <strong>{{ detection_summary.low }}</strong>
+            <progress max="{{ detection_summary.total or 1 }}" value="{{ detection_summary.low }}"></progress>
+            <small>{{ detection_summary.risk_percentage(detection_summary.low) }}%</small>
+        </article>
+        <article class="detection-metric medium">
+            <span>中风险</span>
+            <strong>{{ detection_summary.medium }}</strong>
+            <progress max="{{ detection_summary.total or 1 }}" value="{{ detection_summary.medium }}"></progress>
+            <small>{{ detection_summary.risk_percentage(detection_summary.medium) }}%</small>
+        </article>
+        <article class="detection-metric high">
+            <span>高风险</span>
+            <strong>{{ detection_summary.high }}</strong>
+            <progress max="{{ detection_summary.total or 1 }}" value="{{ detection_summary.high }}"></progress>
+            <small>{{ detection_summary.risk_percentage(detection_summary.high) }}%</small>
+        </article>
+    </div>
+</section>
+
 <section class="admin-section mode-control-panel">
     <div>
         <span class="eyebrow">SECURITY MODE</span>
@@ -54,6 +97,63 @@
                 启用漏洞演示模式
             </button>
         </form>
+    </div>
+</section>
+
+<section class="admin-section">
+    <div class="admin-section-heading">
+        <div>
+            <span class="eyebrow">RECENT DETECTIONS</span>
+            <h2>最近检测告警</h2>
+        </div>
+        <span>数据来自 detection_logs · 最新 15 条</span>
+    </div>
+
+    <div class="log-table-wrap">
+        <table class="log-table detection-log-table">
+            <thead>
+                <tr>
+                    <th>编号</th>
+                    <th>攻击类型</th>
+                    <th>路由</th>
+                    <th>风险</th>
+                    <th>分值</th>
+                    <th>动作</th>
+                    <th>时间</th>
+                    <th>详情</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in recent_detections %}
+                <tr>
+                    <td>D-{{ item["id"] }}</td>
+                    <td>{{ item["attack_type"] }}</td>
+                    <td><code>{{ item["endpoint"] }}</code></td>
+                    <td>
+                        <span class="risk-badge {{ item['risk_level'] }}">
+                            {{ risk_level_labels[item["risk_level"]] }}
+                        </span>
+                    </td>
+                    <td>{{ item["score"] }}</td>
+                    <td>
+                        <span class="action-badge {{ item['action'] }}">
+                            {{ action_labels[item["action"]] }}
+                        </span>
+                    </td>
+                    <td>{{ item["created_at"] }}</td>
+                    <td>
+                        <a class="text-link" href="{{ url_for('detection_detail', log_id=item['id']) }}">
+                            查看
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8">暂无检测告警。命中规则的请求会自动记录在这里。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </section>
 

@@ -7,6 +7,7 @@ import sqlite3
 import click
 from flask import (
     Flask,
+    abort,
     flash,
     g,
     jsonify,
@@ -35,8 +36,15 @@ from .security.detection import (
     decide_request_action,
     mask_parameters,
 )
-from .services.detection_logs import record_detection
 from .services.articles import list_categories, search_articles
+from .services.detection_logs import (
+    ACTION_LABELS,
+    RISK_LEVEL_LABELS,
+    get_detection_log,
+    get_detection_summary,
+    list_recent_detections,
+    record_detection,
+)
 from .services.settings import (
     SECURITY_MODES,
     get_security_mode,
@@ -193,6 +201,8 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         db = get_db()
         user_count = db.execute("SELECT COUNT(*) AS count FROM users").fetchone()["count"]
         article_count = db.execute("SELECT COUNT(*) AS count FROM articles").fetchone()["count"]
+        detection_summary = get_detection_summary()
+        recent_detections = list_recent_detections(limit=15)
         recent_logs = db.execute(
             """
             SELECT login_logs.id, login_logs.username_attempt, login_logs.source_ip,
@@ -208,6 +218,25 @@ def create_app(config_object: type[Config] = Config) -> Flask:
             user_count=user_count,
             article_count=article_count,
             recent_logs=recent_logs,
+            detection_summary=detection_summary,
+            recent_detections=recent_detections,
+            risk_level_labels=RISK_LEVEL_LABELS,
+            action_labels=ACTION_LABELS,
+        )
+
+    @app.get("/admin/detections/<int:log_id>")
+    @login_required
+    @admin_required
+    def detection_detail(log_id: int):
+        detection_log = get_detection_log(log_id)
+        if detection_log is None:
+            abort(404)
+
+        return render_template(
+            "detection_detail.html",
+            detection_log=detection_log,
+            risk_level_labels=RISK_LEVEL_LABELS,
+            action_labels=ACTION_LABELS,
         )
 
     @app.post("/admin/security-mode")
@@ -227,6 +256,10 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     @app.errorhandler(403)
     def forbidden(error):
         return render_template("403.html"), 403
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return render_template("404.html"), 404
 
     @app.get("/articles")
     @login_required
