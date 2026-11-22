@@ -36,6 +36,15 @@ from .security.detection import (
     decide_request_action,
     mask_parameters,
 )
+from .security.validation import (
+    MAX_CATEGORY_LENGTH,
+    MAX_SEARCH_KEYWORD_LENGTH,
+    MAX_USERNAME_LENGTH,
+    InputValidationError,
+    validate_choice,
+    validate_password,
+    validate_text,
+)
 from .services.articles import list_categories, search_articles
 from .services.detection_logs import (
     ACTION_LABELS,
@@ -149,6 +158,28 @@ def create_app(config_object: type[Config] = Config) -> Flask:
 
         return None
 
+    @app.after_request
+    def add_security_headers(response):
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            (
+                "default-src 'self'; script-src 'self'; style-src 'self'; "
+                "img-src 'self' data:; object-src 'none'; base-uri 'self'; "
+                "frame-ancestors 'none'; form-action 'self'"
+            ),
+        )
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=()",
+        )
+        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        if response.mimetype == "text/html":
+            response.headers.setdefault("Cache-Control", "no-store")
+        return response
+
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if g.user is not None:
@@ -158,9 +189,20 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         username = ""
 
         if request.method == "POST":
-            username = request.form.get("username", "").strip()[:80]
-            password = request.form.get("password", "")
-            user = authenticate_user(username, password)
+            raw_username = request.form.get("username", "")
+            try:
+                username = validate_text(
+                    raw_username,
+                    field="用户名",
+                    max_length=MAX_USERNAME_LENGTH,
+                    required=True,
+                )
+                password = validate_password(request.form.get("password", ""))
+                user = authenticate_user(username, password)
+            except InputValidationError:
+                username = raw_username[:MAX_USERNAME_LENGTH]
+                user = None
+
             db = get_db()
 
             with db:
@@ -261,13 +303,41 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     def not_found(error):
         return render_template("404.html"), 404
 
+    @app.errorhandler(400)
+    def bad_request(error):
+        message = getattr(error, "description", None) or "请求参数无效。"
+        return render_template("400.html", message=message), 400
+
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        app.logger.exception("Unhandled application error")
+        return render_template("500.html"), 500
+
     @app.get("/articles")
     @login_required
     def article_search():
-        keyword = request.args.get("q", "").strip()[:80]
-        category = request.args.get("category", "").strip()[:40]
-        articles = search_articles(keyword=keyword, category=category)
         categories = list_categories()
+        try:
+            keyword = validate_text(
+                request.args.get("q"),
+                field="搜索关键词",
+                max_length=MAX_SEARCH_KEYWORD_LENGTH,
+            )
+            category = validate_text(
+                request.args.get("category"),
+                field="文章分类",
+                max_length=MAX_CATEGORY_LENGTH,
+            )
+            category = validate_choice(
+                category,
+                field="文章分类",
+                allowed_values=categories,
+                allow_blank=True,
+            )
+        except InputValidationError as error:
+            return render_template("400.html", message=error.message), 400
+
+        articles = search_articles(keyword=keyword, category=category)
         return render_template(
             "articles.html",
             articles=articles,

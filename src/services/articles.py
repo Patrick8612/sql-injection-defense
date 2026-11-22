@@ -2,22 +2,87 @@
 
 from __future__ import annotations
 
-from ..database import get_db
+import sqlite3
+from pathlib import Path
+
+from flask import current_app
+
+from ..security.validation import (
+    MAX_CATEGORY_LENGTH,
+    MAX_SEARCH_KEYWORD_LENGTH,
+    validate_text,
+)
 
 
 MAX_SEARCH_RESULTS = 100
+READABLE_COLUMNS = {
+    "articles": {
+        "id",
+        "title",
+        "content",
+        "category",
+        "author_id",
+        "created_at",
+    },
+    "users": {"id", "display_name"},
+}
+
+
+def open_article_readonly_connection() -> sqlite3.Connection:
+    """Open a query-only connection restricted to article display tables."""
+
+    database_path = Path(current_app.config["DATABASE_PATH"])
+    database_uri = f"{database_path.resolve().as_uri()}?mode=ro"
+    db = sqlite3.connect(database_uri, uri=True)
+    db.row_factory = sqlite3.Row
+    db.execute("PRAGMA query_only = ON")
+    db.execute("PRAGMA trusted_schema = OFF")
+
+    allowed_actions = {sqlite3.SQLITE_SELECT}
+    if hasattr(sqlite3, "SQLITE_RECURSIVE"):
+        allowed_actions.add(sqlite3.SQLITE_RECURSIVE)
+
+    def authorize(
+        action: int,
+        argument_one: str | None,
+        argument_two: str | None,
+        database_name: str | None,
+        trigger_name: str | None,
+    ) -> int:
+        del database_name, trigger_name
+
+        if action in allowed_actions:
+            return sqlite3.SQLITE_OK
+        if action == sqlite3.SQLITE_READ and argument_two in READABLE_COLUMNS.get(
+            argument_one or "",
+            set(),
+        ):
+            return sqlite3.SQLITE_OK
+        if (
+            action == sqlite3.SQLITE_FUNCTION
+            and (argument_two or "").lower() == "like"
+        ):
+            return sqlite3.SQLITE_OK
+        return sqlite3.SQLITE_DENY
+
+    db.set_authorizer(authorize)
+    return db
 
 
 def list_categories() -> list[str]:
     """Return the distinct article categories."""
 
-    rows = get_db().execute(
-        """
-        SELECT DISTINCT category
-        FROM articles
-        ORDER BY category
-        """
-    ).fetchall()
+    db = open_article_readonly_connection()
+    try:
+        rows = db.execute(
+            """
+            SELECT DISTINCT category
+            FROM articles
+            ORDER BY category
+            """
+        ).fetchall()
+    finally:
+        db.close()
 
     return [row["category"] for row in rows]
 
@@ -25,8 +90,16 @@ def list_categories() -> list[str]:
 def search_articles(keyword: str = "", category: str = ""):
     """Search articles with fixed SQL structure and bound parameters."""
 
-    keyword = keyword.strip()[:80]
-    category = category.strip()[:40]
+    keyword = validate_text(
+        keyword,
+        field="搜索关键词",
+        max_length=MAX_SEARCH_KEYWORD_LENGTH,
+    )
+    category = validate_text(
+        category,
+        field="文章分类",
+        max_length=MAX_CATEGORY_LENGTH,
+    )
 
     conditions: list[str] = []
     parameters: list[object] = []
@@ -63,4 +136,8 @@ def search_articles(keyword: str = "", category: str = ""):
         LIMIT ?
     """
 
-    return get_db().execute(query, parameters).fetchall()
+    db = open_article_readonly_connection()
+    try:
+        return db.execute(query, parameters).fetchall()
+    finally:
+        db.close()

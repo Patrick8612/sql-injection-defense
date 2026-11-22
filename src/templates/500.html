@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}500 系统暂时不可用{% endblock %}
+
+{% block content %}
+<section class="forbidden-panel">
+    <div class="forbidden-code">500</div>
+    <h1>系统暂时不可用</h1>
+    <p>请求未能完成。系统已隐藏内部错误细节，请稍后重试。</p>
+    <a class="button button-primary" href="{{ url_for('index') }}">
+        返回系统首页
+    </a>
+</section>
+{% endblock %}
