@@ -25,6 +25,15 @@ from .security.auth import (
     init_app as init_auth,
     login_required,
 )
+from .security.detection import (
+    DetectionResult,
+    DispositionAction,
+    RequestFrequencyTracker,
+    analyze_parameters,
+    assess_detection,
+    build_frequency_finding,
+    decide_request_action,
+)
 from .services.articles import list_categories, search_articles
 from .services.settings import (
     SECURITY_MODES,
@@ -41,6 +50,11 @@ from .services.sql_injection_demo import (
     run_demo_query,
 )
 
+MONITORED_ENDPOINT_PARAMETERS = {
+    "article_search": ("q", "category"),
+    "sql_injection_demo": ("q",),
+}
+
 
 def create_app(config_object: type[Config] = Config) -> Flask:
     app = Flask(__name__)
@@ -48,6 +62,8 @@ def create_app(config_object: type[Config] = Config) -> Flask:
 
     init_database(app)
     init_auth(app)
+    frequency_tracker = RequestFrequencyTracker()
+    app.extensions["security_frequency_tracker"] = frequency_tracker
 
     with app.app_context():
         init_db()
@@ -65,6 +81,52 @@ def create_app(config_object: type[Config] = Config) -> Flask:
             "security_mode": mode,
             "security_mode_label": security_mode_label(mode),
         }
+
+    @app.before_request
+    def monitor_detected_parameters():
+        parameter_names = MONITORED_ENDPOINT_PARAMETERS.get(request.endpoint)
+        if not parameter_names:
+            return None
+
+        parameters = {}
+        for name in parameter_names:
+            values = request.args.getlist(name)
+            if values:
+                parameters[name] = values[0] if len(values) == 1 else values
+
+        detection = analyze_parameters(parameters)
+        if detection.matched:
+            identity = (
+                f"user:{g.user['id']}"
+                if g.user is not None
+                else f"ip:{request.remote_addr or 'unknown'}"
+            )
+            frequency = frequency_tracker.record(
+                f"{identity}|{request.endpoint}"
+            )
+            if frequency.exceeded:
+                detection = DetectionResult(
+                    findings=detection.findings
+                    + (build_frequency_finding(frequency),),
+                    parameters_checked=detection.parameters_checked,
+                )
+
+        assessment = assess_detection(detection)
+        security_mode = get_security_mode()
+        decision = decide_request_action(
+            assessment,
+            endpoint=request.endpoint,
+            security_mode=security_mode,
+        )
+
+        g.security_detection = detection
+        g.security_assessment = assessment
+        g.security_decision = decision
+
+        if decision.effective_action is DispositionAction.BLOCK:
+            return render_template("security_blocked.html"), 403
+
+        return None
 
     @app.route("/login", methods=["GET", "POST"])
     def login():

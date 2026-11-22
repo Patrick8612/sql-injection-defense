@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}请求已拦截 · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<section class="forbidden-panel security-blocked-panel">
+    <div class="forbidden-code">403</div>
+    <h1>请求已拦截</h1>
+    <p>
+        请求包含高风险输入，系统已在执行查询前阻止该操作。
+        检测详情不会在公开页面回显。
+    </p>
+    <a class="button button-primary" href="{{ url_for('index') }}">
+        返回系统首页
+    </a>
+</section>
+{% endblock %}
