@@ -12,6 +12,7 @@ from ..security.detection.scoring import (
 )
 
 RISK_LEVEL_LABELS = {
+    "none": "无风险",
     "low": "低风险",
     "medium": "中风险",
     "high": "高风险",

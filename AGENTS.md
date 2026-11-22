@@ -27,8 +27,9 @@
 - 4F：阶段四收尾已完成。完整回归为 `81 passed`，Docker Compose 配置、镜像构建、容器健康、真实日志统计和管理员详情页均完成实际验收，容器停止时保留数据卷。
 - 5A：安全模式加固已完成。文章查询使用独立只读连接和列级白名单；输入改为显式长度、控制字符、密码和分类校验，不再静默截断；统一 400/500 错误页面并增加 CSP、nosniff、禁止 iframe、无来源信息和 HTML 禁止缓存等安全响应头。
 - 5B：同输入安全对照已完成。管理员可在 `/admin/comparison` 执行六个固定用例，使用同一输入分别运行隔离漏洞查询和参数化安全查询，并将脱敏状态、数量、错误、风险、规则、建议动作和结论写入 `comparison_runs` / `comparison_results`。实验不修改全局模式，也不自动写 `detection_logs`。
+- 5C：实验报告已完成。管理员可从真实对照实验和检测日志生成 Markdown 快照，保存到 `experiment_reports`，支持预览和下载。报告只使用脱敏记录和真实统计，后续数据变化不会改写旧报告。
 
-当前完整测试结果为 `108 passed`。不要重写上述已完成功能。
+当前完整测试结果为 `117 passed`。不要重写上述已完成功能。
 
 阶段四 Docker 验收已完成：Compose 配置校验通过，容器达到 `healthy`，`/health` 返回 `200 {"status":"ok"}`。停止容器时使用 `docker compose down`，未删除数据卷。
 
@@ -63,6 +64,9 @@ pytest 配置已将临时目录固定为项目内的 `.pytest-basetemp/`。
 - `src/services/articles.py`：5A 只读文章查询连接和白名单。
 - `src/services/comparison.py`：5B 固定用例、双侧执行和对照持久化。
 - `src/templates/comparison.html`：5B 管理员对照实验页面。
+- `src/services/reports.py`：5C 真实数据报告生成与快照。
+- `src/templates/reports.html`：5C 报告列表与生成入口。
+- `src/templates/report_preview.html`：5C Markdown 报告预览。
 - `src/templates/detection_detail.html`：4E 管理员检测详情页。
 - `src/templates/404.html`：统一缺失页面。
 - `src/templates/security_blocked.html`：高风险请求拦截页。
@@ -72,6 +76,6 @@ pytest 配置已将临时目录固定为项目内的 `.pytest-basetemp/`。
 
 ## 下一次工作
 
-下一步是 5C：只使用真实 `comparison_runs`、`comparison_results` 和 `detection_logs` 生成课程实验报告，不使用固定或手工编造数据。
+下一步是 5D：实现仅管理员可使用的一键演示环境恢复，安全重置虚构数据、模式、日志和运行状态。
 
-5B 的漏洞侧不得脱离独立只读演示库，安全侧不得放弃参数绑定。对照记录只保存脱敏摘要，建议动作不能冒充实际执行动作。阶段五始终只处理本地虚构数据，漏洞演示模式默认应保持关闭。
+5C 报告只能读取真实数据，必须在生成时保存快照，不能用后续数据回填旧报告。5B 的漏洞侧不得脱离独立只读演示库，安全侧不得放弃参数绑定；建议动作不能冒充实际执行动作。阶段五始终只处理本地虚构数据，漏洞演示模式默认应保持关闭。

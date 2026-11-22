@@ -7,6 +7,7 @@ import sqlite3
 import click
 from flask import (
     Flask,
+    Response,
     abort,
     flash,
     g,
@@ -65,6 +66,11 @@ from .services.settings import (
     get_security_mode,
     security_mode_label,
     set_security_mode,
+)
+from .services.reports import (
+    generate_experiment_report,
+    get_experiment_report,
+    list_experiment_reports,
 )
 from .services.sql_injection_demo import (
     MAX_DEMO_INPUT_LENGTH,
@@ -320,6 +326,57 @@ def create_app(config_object: type[Config] = Config) -> Flask:
         run_id = run_comparison_experiment()
         flash("同输入安全对照实验已完成。", "success")
         return redirect(url_for("comparison_dashboard", run_id=run_id))
+
+    @app.get("/admin/reports")
+    @login_required
+    @admin_required
+    def report_dashboard():
+        return render_template(
+            "reports.html",
+            reports=list_experiment_reports(limit=20),
+            runs=list_comparison_runs(limit=20),
+        )
+
+    @app.post("/admin/reports/generate")
+    @login_required
+    @admin_required
+    def generate_report():
+        run_id = request.form.get("run_id", type=int)
+        if run_id is None or get_comparison_run(run_id) is None:
+            flash("请选择有效的对照实验记录。", "error")
+            return redirect(url_for("report_dashboard"))
+
+        report_id = generate_experiment_report(run_id)
+        flash("实验报告已根据真实数据生成。", "success")
+        return redirect(url_for("report_preview", report_id=report_id))
+
+    @app.get("/admin/reports/<int:report_id>")
+    @login_required
+    @admin_required
+    def report_preview(report_id: int):
+        report = get_experiment_report(report_id)
+        if report is None:
+            abort(404)
+        return render_template("report_preview.html", report=report)
+
+    @app.get("/admin/reports/<int:report_id>/download")
+    @login_required
+    @admin_required
+    def download_report(report_id: int):
+        report = get_experiment_report(report_id)
+        if report is None:
+            abort(404)
+
+        response = Response(
+            report["content_markdown"],
+            mimetype="text/markdown; charset=utf-8",
+        )
+        response.headers["Content-Disposition"] = (
+            "attachment; "
+            f"filename=experiment-report-{report_id}"
+            f"-run-{report['comparison_run_id']}.md"
+        )
+        return response
 
     @app.post("/admin/security-mode")
     @login_required

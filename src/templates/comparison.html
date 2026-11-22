@@ -12,9 +12,14 @@
             实验不会修改全局运行模式。
         </p>
     </div>
-    <form method="post" action="{{ url_for('run_comparison') }}">
-        <button class="button button-primary" type="submit">重新执行对照</button>
-    </form>
+    <div class="admin-header-actions">
+        <a class="button button-secondary" href="{{ url_for('report_dashboard') }}">
+            实验报告
+        </a>
+        <form method="post" action="{{ url_for('run_comparison') }}">
+            <button class="button button-primary" type="submit">重新执行对照</button>
+        </form>
+    </div>
 </header>
 
 <section class="comparison-safety">

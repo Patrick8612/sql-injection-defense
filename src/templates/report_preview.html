@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}R-{{ report["id"] }} 实验报告预览{% endblock %}
+
+{% block content %}
+<header class="admin-header">
+    <div>
+        <span class="eyebrow">REPORT PREVIEW · R-{{ report["id"] }}</span>
+        <h1>实验报告预览</h1>
+        <p>
+            对照实验 RUN-{{ report["comparison_run_id"] }} ·
+            生成于 {{ report["generated_at"] }}
+        </p>
+    </div>
+    <div class="admin-header-actions">
+        <a class="button button-secondary" href="{{ url_for('report_dashboard') }}">
+            返回报告列表
+        </a>
+        <a class="button button-primary" href="{{ url_for('download_report', report_id=report['id']) }}">
+            下载 Markdown
+        </a>
+    </div>
+</header>
+
+<section class="report-preview-shell">
+    <pre>{{ report["content_markdown"] }}</pre>
+</section>
+{% endblock %}

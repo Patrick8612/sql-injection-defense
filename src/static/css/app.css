@@ -1235,6 +1235,79 @@ a {
     color: var(--muted);
 }
 
+.report-generator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+.report-generator h2 {
+    margin: 7px 0 8px;
+}
+
+.report-generator p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.report-generator form {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: end;
+    gap: 10px;
+}
+
+.report-generator label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+
+.report-generator select {
+    min-width: 340px;
+    height: 46px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    outline: none;
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.18);
+    font: inherit;
+    font-size: 12px;
+}
+
+.report-generator option {
+    color: #111827;
+}
+
+.report-empty-note {
+    padding: 12px 14px;
+    border: 1px dashed var(--border);
+    border-radius: 9px;
+}
+
+.report-preview-shell {
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #f6f8fb;
+    box-shadow: var(--shadow);
+}
+
+.report-preview-shell pre {
+    min-height: 65vh;
+    margin: 0;
+    color: #18263a;
+    font: 13px/1.75 Consolas, "Microsoft YaHei UI", monospace;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 .mode-control-panel {
     display: flex;
     align-items: center;
@@ -1359,6 +1432,17 @@ a {
     .comparison-history a {
         grid-template-columns: 1fr;
         gap: 5px;
+    }
+
+    .report-generator,
+    .report-generator form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .report-generator select {
+        width: 100%;
+        min-width: 0;
     }
 
     .mode-control-panel {

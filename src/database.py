@@ -86,6 +86,15 @@ CREATE TABLE IF NOT EXISTS comparison_results (
     FOREIGN KEY (run_id) REFERENCES comparison_runs(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS experiment_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    comparison_run_id INTEGER NOT NULL,
+    generated_at TEXT NOT NULL,
+    content_markdown TEXT NOT NULL,
+    FOREIGN KEY (comparison_run_id)
+        REFERENCES comparison_runs(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
@@ -120,6 +129,9 @@ CREATE INDEX IF NOT EXISTS idx_detection_logs_created
 
 CREATE INDEX IF NOT EXISTS idx_comparison_results_run
     ON comparison_results(run_id, case_order);
+
+CREATE INDEX IF NOT EXISTS idx_experiment_reports_generated
+    ON experiment_reports(generated_at);
 """
 
 
