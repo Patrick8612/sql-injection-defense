@@ -55,6 +55,37 @@ CREATE TABLE IF NOT EXISTS detection_logs (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS comparison_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS comparison_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id INTEGER NOT NULL,
+    case_order INTEGER NOT NULL,
+    case_code TEXT NOT NULL,
+    case_name TEXT NOT NULL,
+    scenario TEXT NOT NULL,
+    parameter_masked TEXT NOT NULL,
+    vulnerable_success INTEGER NOT NULL
+        CHECK (vulnerable_success IN (0, 1)),
+    vulnerable_count INTEGER NOT NULL,
+    vulnerable_error TEXT,
+    safe_success INTEGER NOT NULL
+        CHECK (safe_success IN (0, 1)),
+    safe_count INTEGER NOT NULL,
+    safe_error TEXT,
+    risk_level TEXT NOT NULL
+        CHECK (risk_level IN ('none', 'low', 'medium', 'high')),
+    risk_score INTEGER NOT NULL,
+    suggested_action TEXT NOT NULL
+        CHECK (suggested_action IN ('allow', 'alert', 'block')),
+    rule_codes TEXT NOT NULL,
+    conclusion TEXT NOT NULL,
+    FOREIGN KEY (run_id) REFERENCES comparison_runs(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
@@ -86,6 +117,9 @@ CREATE INDEX IF NOT EXISTS idx_login_logs_created
 
 CREATE INDEX IF NOT EXISTS idx_detection_logs_created
     ON detection_logs(created_at);
+
+CREATE INDEX IF NOT EXISTS idx_comparison_results_run
+    ON comparison_results(run_id, case_order);
 """
 
 

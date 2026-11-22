@@ -46,6 +46,12 @@ from .security.validation import (
     validate_text,
 )
 from .services.articles import list_categories, search_articles
+from .services.comparison import (
+    get_comparison_run,
+    list_comparison_results,
+    list_comparison_runs,
+    run_comparison_experiment,
+)
 from .services.detection_logs import (
     ACTION_LABELS,
     RISK_LEVEL_LABELS,
@@ -280,6 +286,40 @@ def create_app(config_object: type[Config] = Config) -> Flask:
             risk_level_labels=RISK_LEVEL_LABELS,
             action_labels=ACTION_LABELS,
         )
+
+    @app.get("/admin/comparison")
+    @login_required
+    @admin_required
+    def comparison_dashboard():
+        runs = list_comparison_runs(limit=10)
+        selected_run_id = request.args.get("run_id", type=int)
+        if selected_run_id is None and runs:
+            selected_run_id = runs[0]["id"]
+
+        selected_run = None
+        comparison_results = []
+        if selected_run_id is not None:
+            selected_run = get_comparison_run(selected_run_id)
+            if selected_run is None:
+                abort(404)
+            comparison_results = list_comparison_results(selected_run_id)
+
+        return render_template(
+            "comparison.html",
+            runs=runs,
+            selected_run=selected_run,
+            comparison_results=comparison_results,
+            risk_level_labels=RISK_LEVEL_LABELS,
+            action_labels=ACTION_LABELS,
+        )
+
+    @app.post("/admin/comparison/run")
+    @login_required
+    @admin_required
+    def run_comparison():
+        run_id = run_comparison_experiment()
+        flash("同输入安全对照实验已完成。", "success")
+        return redirect(url_for("comparison_dashboard", run_id=run_id))
 
     @app.post("/admin/security-mode")
     @login_required

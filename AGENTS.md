@@ -26,8 +26,9 @@
 - 4E：管理面板检测视图已完成。`/admin` 从真实 `detection_logs` 展示总数、低/中/高分布、动作统计、最近检测时间和最新 15 条告警；`/admin/detections/<id>` 提供管理员脱敏详情，普通用户 403、未登录跳转登录、缺失记录 404。
 - 4F：阶段四收尾已完成。完整回归为 `81 passed`，Docker Compose 配置、镜像构建、容器健康、真实日志统计和管理员详情页均完成实际验收，容器停止时保留数据卷。
 - 5A：安全模式加固已完成。文章查询使用独立只读连接和列级白名单；输入改为显式长度、控制字符、密码和分类校验，不再静默截断；统一 400/500 错误页面并增加 CSP、nosniff、禁止 iframe、无来源信息和 HTML 禁止缓存等安全响应头。
+- 5B：同输入安全对照已完成。管理员可在 `/admin/comparison` 执行六个固定用例，使用同一输入分别运行隔离漏洞查询和参数化安全查询，并将脱敏状态、数量、错误、风险、规则、建议动作和结论写入 `comparison_runs` / `comparison_results`。实验不修改全局模式，也不自动写 `detection_logs`。
 
-当前完整测试结果为 `98 passed`。不要重写上述已完成功能。
+当前完整测试结果为 `108 passed`。不要重写上述已完成功能。
 
 阶段四 Docker 验收已完成：Compose 配置校验通过，容器达到 `healthy`，`/health` 返回 `200 {"status":"ok"}`。停止容器时使用 `docker compose down`，未删除数据卷。
 
@@ -60,6 +61,8 @@ pytest 配置已将临时目录固定为项目内的 `.pytest-basetemp/`。
 - `src/services/detection_logs.py`：4D 检测日志分类和持久化。
 - `src/security/validation.py`：5A 请求输入显式校验。
 - `src/services/articles.py`：5A 只读文章查询连接和白名单。
+- `src/services/comparison.py`：5B 固定用例、双侧执行和对照持久化。
+- `src/templates/comparison.html`：5B 管理员对照实验页面。
 - `src/templates/detection_detail.html`：4E 管理员检测详情页。
 - `src/templates/404.html`：统一缺失页面。
 - `src/templates/security_blocked.html`：高风险请求拦截页。
@@ -69,6 +72,6 @@ pytest 配置已将临时目录固定为项目内的 `.pytest-basetemp/`。
 
 ## 下一次工作
 
-下一步是 5B：使用相同测试输入完成漏洞模式与安全模式的真实对照实验，并记录可追溯结果。
+下一步是 5C：只使用真实 `comparison_runs`、`comparison_results` 和 `detection_logs` 生成课程实验报告，不使用固定或手工编造数据。
 
-5A 已保证正常业务查询使用参数绑定和最小读取权限，不能为了对照实验重新引入可写或不安全拼接。4E/4F 的统计必须继续来自真实 `detection_logs`，不得手工构造；频率窗口仍保存在内存中。阶段五始终只处理本地虚构数据，漏洞演示模式默认应保持关闭。
+5B 的漏洞侧不得脱离独立只读演示库，安全侧不得放弃参数绑定。对照记录只保存脱敏摘要，建议动作不能冒充实际执行动作。阶段五始终只处理本地虚构数据，漏洞演示模式默认应保持关闭。

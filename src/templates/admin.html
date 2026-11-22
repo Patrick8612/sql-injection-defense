@@ -9,10 +9,15 @@
         <h1>管理控制台</h1>
         <p>查看系统状态、运行模式、检测风险分布和最近安全告警。</p>
     </div>
-    <span class="environment-badge">
-        <span class="status-dot"></span>
-        管理员权限已启用
-    </span>
+    <div class="admin-header-actions">
+        <a class="button button-secondary" href="{{ url_for('comparison_dashboard') }}">
+            模式对照实验
+        </a>
+        <span class="environment-badge">
+            <span class="status-dot"></span>
+            管理员权限已启用
+        </span>
+    </div>
 </header>
 
 <section class="admin-metrics" aria-label="系统统计">

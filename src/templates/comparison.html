@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}模式对照实验 · SQL 注入防御演示系统{% endblock %}
+
+{% block content %}
+<header class="admin-header">
+    <div>
+        <span class="eyebrow">CONTROLLED COMPARISON · STAGE 5B</span>
+        <h1>模式对照实验</h1>
+        <p>
+            使用固定输入分别执行隔离漏洞查询与参数化安全查询。
+            实验不会修改全局运行模式。
+        </p>
+    </div>
+    <form method="post" action="{{ url_for('run_comparison') }}">
+        <button class="button button-primary" type="submit">重新执行对照</button>
+    </form>
+</header>
+
+<section class="comparison-safety">
+    <strong>受控实验</strong>
+    <span>
+        漏洞侧仅访问独立只读演示库；安全侧使用 5A 只读文章查询和参数绑定。
+        原始输入不会写入对照记录。
+    </span>
+</section>
+
+{% if selected_run %}
+<section class="admin-section">
+    <div class="admin-section-heading">
+        <div>
+            <span class="eyebrow">RUN-{{ selected_run["id"] }}</span>
+            <h2>实验记录</h2>
+        </div>
+        <span>执行时间：{{ selected_run["created_at"] }}</span>
+    </div>
+
+    <div class="comparison-table-wrap">
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>用例</th>
+                    <th>脱敏输入</th>
+                    <th>漏洞查询</th>
+                    <th>安全查询</th>
+                    <th>风险</th>
+                    <th>建议动作</th>
+                    <th>结论</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in comparison_results %}
+                <tr>
+                    <td>
+                        <strong>{{ item["case_code"] }}</strong>
+                        <span>{{ item["case_name"] }}</span>
+                    </td>
+                    <td><code>{{ item["parameter_masked"] }}</code></td>
+                    <td>
+                        <span class="comparison-status {{ 'success' if item['vulnerable_success'] else 'failure' }}">
+                            {{ "完成" if item["vulnerable_success"] else "未完成" }}
+                        </span>
+                        <small>返回 {{ item["vulnerable_count"] }} 条</small>
+                        {% if item["vulnerable_error"] %}
+                        <small class="comparison-error">{{ item["vulnerable_error"] }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="comparison-status {{ 'success' if item['safe_success'] else 'failure' }}">
+                            {{ "完成" if item["safe_success"] else "被校验拦截" }}
+                        </span>
+                        <small>返回 {{ item["safe_count"] }} 条</small>
+                        {% if item["safe_error"] %}
+                        <small class="comparison-error">{{ item["safe_error"] }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="risk-badge {{ item['risk_level'] }}">
+                            {{ risk_level_labels.get(item["risk_level"], item["risk_level"]) }}
+                        </span>
+                        <small>{{ item["risk_score"] }} 分</small>
+                    </td>
+                    <td>
+                        <span class="action-badge {{ item['suggested_action'] }}">
+                            {{ action_labels[item["suggested_action"]] }}
+                        </span>
+                    </td>
+                    <td>
+                        <span>{{ item["conclusion"] }}</span>
+                        {% if item["rule_codes"] %}
+                        <small><code>{{ item["rule_codes"] }}</code></small>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% else %}
+<section class="empty-comparison">
+    <h2>还没有对照实验记录</h2>
+    <p>点击“重新执行对照”，系统会真实执行固定的六个实验用例。</p>
+</section>
+{% endif %}
+
+<section class="admin-section">
+    <h2>历史实验</h2>
+    <div class="comparison-history">
+        {% for run in runs %}
+        <a class="{{ 'active' if selected_run and run['id'] == selected_run['id'] else '' }}"
+            href="{{ url_for('comparison_dashboard', run_id=run['id']) }}">
+            <strong>RUN-{{ run["id"] }}</strong>
+            <span>{{ run["created_at"] }}</span>
+            <small>{{ run["case_count"] }} 个用例 · 高风险 {{ run["high_count"] }}</small>
+        </a>
+        {% else %}
+        <p>暂无历史记录。</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
